@@ -276,101 +276,6 @@ def get_public_ip():
     except:
         return "Unable to determine"
 
-def create_daemon():
-    """Create a LaunchAgent to keep the service running."""
-    print_header("Background Service Setup")
-    
-    print("⏳ Creating background service...")
-    
-    # Create a simple keepalive script
-    keepalive_script = """#!/usr/bin/env python3
-import subprocess
-import time
-import sys
-
-# Log to file
-log_file = open('/tmp/vnc_keepalive.log', 'a')
-sys.stdout = log_file
-sys.stderr = log_file
-
-print(f"VNC Keepalive started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-log_file.flush()
-
-while True:
-    try:
-        # Check if Screen Sharing is running
-        result = subprocess.run(
-            ["launchctl", "list"],
-            capture_output=True,
-            text=True
-        )
-        
-        if "com.apple.screensharing" not in result.stdout:
-            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - Screen Sharing not running, restarting...")
-            log_file.flush()
-            subprocess.run([
-                "launchctl", "load", "-w",
-                "/System/Library/LaunchDaemons/com.apple.screensharing.plist"
-            ], capture_output=True)
-        
-        time.sleep(60)  # Check every minute
-    except Exception as e:
-        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - Error: {e}")
-        log_file.flush()
-        time.sleep(60)
-"""
-    
-    plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.user.vnc.keepalive</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/usr/bin/python3</string>
-        <string>/tmp/vnc_keepalive.py</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-</dict>
-</plist>
-"""
-    
-    # Save keepalive script
-    with open("/tmp/vnc_keepalive.py", "w") as f:
-        f.write(keepalive_script)
-    
-    run_command("chmod +x /tmp/vnc_keepalive.py")
-    
-    # Save plist file
-    plist_path = os.path.expanduser("~/Library/LaunchAgents/com.user.vnc.keepalive.plist")
-    os.makedirs(os.path.dirname(plist_path), exist_ok=True)
-    
-    with open(plist_path, "w") as f:
-        f.write(plist_content)
-    
-    # Unload first if it exists (ignore errors)
-    run_command(f"launchctl unload {plist_path} 2>/dev/null", require_sudo=False)
-    
-    # Load the LaunchAgent
-    success, output = run_command(f"launchctl load {plist_path}", require_sudo=False)
-    
-    time.sleep(1)
-    
-    # Check if it's actually running
-    check_success, check_output = run_command("launchctl list | grep vnc.keepalive", require_sudo=False)
-    
-    if check_success and "vnc.keepalive" in check_output:
-        print("✅ Background monitoring configured and started")
-    else:
-        print("⚠️  Background service created but may not be running")
-        print(f"   Check with: launchctl list | grep vnc")
-    
-    return True
-
 def verify_setup():
     """Verify that VNC is running."""
     print_header("Verifying Setup")
@@ -433,13 +338,13 @@ def print_connection_info():
     print("QUICK REFERENCE")
     print("─"*60)
     
-    print(f"\n  Check Status:  launchctl list | grep vnc")
-    print(f"  View Logs:     tail -f /tmp/vnc_keepalive.log")
+    print(f"\n  Check Status:  sudo launchctl list | grep screensharing")
     print(f"  Stop VNC:      sudo launchctl unload /System/Library/LaunchDaemons/com.apple.screensharing.plist")
-    print(f"  Uninstall:     rm ~/Library/LaunchAgents/com.user.vnc.keepalive.plist && killall Python")
+    print(f"  Start VNC:     sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist")
     
     print("\n" + "="*60)
     print("\nYour Mac is now remotely accessible via VNC!")
+    print("Screen Sharing will continue running even after reboot.")
     print("\n" + "="*60 + "\n")
 
 def main():
@@ -490,9 +395,6 @@ def main():
     
     # Configure firewall
     check_firewall()
-    
-    # Create background daemon
-    create_daemon()
     
     # Verify setup
     print_header("Final Verification")
