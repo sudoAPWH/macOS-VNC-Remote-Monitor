@@ -9,7 +9,6 @@ Automatically configures your Mac for remote VNC access:
 - ✅ Enables macOS Screen Sharing service
 - ✅ Sets up password authentication
 - ✅ Configures firewall exceptions
-- ✅ Creates background monitoring service
 - ✅ Provides connection information
 
 ## Requirements
@@ -32,10 +31,12 @@ The script will prompt you for:
 ## How It Works
 
 ### 1. Enables Screen Sharing
-Uses macOS's Remote Management tools:
+Uses macOS's Remote Management tools to activate Screen Sharing as a system service:
 ```bash
 launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist
 ```
+
+Screen Sharing runs as a system daemon and will automatically start after reboots.
 
 ### 2. Sets VNC Password
 Configures authentication via Apple Remote Desktop:
@@ -50,13 +51,10 @@ Adds Screen Sharing to allowed services if firewall is enabled:
 /usr/libexec/ApplicationFirewall/socketfilterfw --add AppleVNCServer
 ```
 
-### 4. Creates Background Monitor
-Generates a LaunchAgent that checks VNC status every 60 seconds and restarts if needed. Ensures VNC stays active after reboots.
-
-### 5. Verifies Setup
+### 4. Verifies Setup
 - Checks Screen Sharing service is running
 - Verifies VNC port is listening
-- Displays connection information
+- Displays connection information (local & public IP)
 
 ## Connecting
 
@@ -91,35 +89,45 @@ Generates a LaunchAgent that checks VNC status every 60 seconds and restarts if 
 sudo launchctl list | grep screensharing
 ```
 
-**Check background service:**
-```bash
-launchctl list | grep vnc
-```
-
-**View logs:**
-```bash
-tail -f /tmp/vnc_keepalive.log
-```
-
 **Manually start/stop:**
 ```bash
-# Start VNC
+# Start
 sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist
 
-# Stop VNC
+# Stop
 sudo launchctl unload /System/Library/LaunchDaemons/com.apple.screensharing.plist
+```
+
+**Check port:**
+```bash
+lsof -i :5900
 ```
 
 ## Uninstall
 
+To completely remove VNC configuration, use the uninstall script:
+
 ```bash
-# Stop VNC
+sudo python3 uninstall_vnc.py
+```
+
+The uninstall script will:
+- Disable Screen Sharing service
+- Remove VNC password and configuration
+- Remove firewall exceptions (optional)
+
+### Manual Uninstall
+
+If you prefer to uninstall manually:
+
+```bash
+# Stop Screen Sharing
 sudo launchctl unload /System/Library/LaunchDaemons/com.apple.screensharing.plist
 
-# Remove background service
-rm ~/Library/LaunchAgents/com.user.vnc.keepalive.plist
-killall Python
-rm /tmp/vnc_keepalive.py
+# Remove VNC configuration
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -stop
+
+# Or disable in System Preferences > Sharing > uncheck "Screen Sharing"
 ```
 
 ## License
