@@ -1,7 +1,6 @@
 # macOS VNC Remote Monitor
 
-A simple Python script to set up VNC (Screen Sharing) on macOS for remote monitoring. Perfect for monitoring your Mac while traveling.
-
+A simple Python script to set up VNC (Screen Sharing) on macOS for remote monitoring.
 ## What It Does
 
 Automatically configures your Mac for remote VNC access:
