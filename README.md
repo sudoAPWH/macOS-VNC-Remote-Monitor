@@ -16,13 +16,26 @@ Automatically configures your Mac for remote VNC access:
 - Python 3 (pre-installed)
 - sudo privileges
 
-## Usage
+## Installation
 
+1. **Clone the repository:**
+```bash
+git clone https://github.com/sudoAPWH/macOS-VNC-Remote-Monitor.git
+```
+
+2. **Navigate to the directory:**
+```bash
+cd macOS-VNC-Remote-Monitor
+```
+
+3. **Run the setup script:**
 ```bash
 sudo python3 mac_vnc_monitor.py
 ```
 
-The script will prompt you for:
+## Usage
+
+Once installed, the script will prompt you for:
 1. **VNC Password** (min 8 characters)
 2. **Port Number** (default: 5900)
 3. **Confirmation** to proceed
@@ -104,9 +117,10 @@ lsof -i :5900
 
 ## Uninstall
 
-To completely remove VNC configuration, use the uninstall script:
+To completely remove VNC configuration, run the uninstall script from the repository directory:
 
 ```bash
+cd macOS-VNC-Remote-Monitor
 sudo python3 uninstall_vnc.py
 ```
 
